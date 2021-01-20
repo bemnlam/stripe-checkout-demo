@@ -1,0 +1,45 @@
+﻿@page
+@model IndexModel
+@{ ViewData["Title"] = "Checkout Session"; }
+<div>
+    <h1 class="display-4">Welcome</h1>
+    <p>Learn about <a href="https://docs.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+
+    <button id="checkout-button">Go to Checkout Page</button>
+
+    <p>Checkout session ID: <pre>@(Model.CheckoutSessionId)</pre></p>
+
+    <details>
+        <summary>Product name: <code>@(Model.Price.Product.Name)</code></summary>
+        <pre>@Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(Model.Price, Newtonsoft.Json.Formatting.Indented))</pre>
+    </details>
+</div>
+
+
+<!-- Load Stripe.js on your website. -->
+<script src="https://js.stripe.com/v3"></script>
+
+<script>
+    (function() {
+        var stripe = Stripe('@(Model.PublicKey)');
+
+        var checkoutButton = document.getElementById('checkout-button');
+        checkoutButton.addEventListener('click', function () {
+            redirectToStripe();
+        });
+
+        function redirectToStripe() {
+            stripe.redirectToCheckout({
+                sessionId: '@(Model.CheckoutSessionId)'
+            }).then(function (result) {
+                if (result.error) {
+                    // If `redirectToCheckout` fails due to a browser or network
+                    // error, display the localized error message to your customer.
+                    var displayError = document.getElementById('error-message');
+                    displayError.textContent = result.error.message;
+                }
+            });
+        }
+
+    })();
+</script>
