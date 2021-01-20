@@ -5,7 +5,18 @@
     <h1 class="display-4">Welcome</h1>
     <p>Learn about <a href="https://docs.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
 
-    <button id="checkout-button">Go to Checkout Page</button>
+    <button style="background-color:#FFF;color:#6772E5;padding:8px 12px;border:1px solid #6772E5;border-radius:4px;font-size:1em"
+            id="checkout-button">
+        Checkout (by backend-generated session ID)
+    </button>
+    
+    <!-- Create a button that your customers click to complete their purchase. Customize the styling to suit your branding. -->
+    <button style="background-color:#6772E5;color:#FFF;padding:8px 12px;border:1px solid #6772E5;border-radius:4px;font-size:1em"
+            id="checkout-button-@(Model.PriceId)"
+            role="link"
+            type="button">
+        Checkout (using js options)
+    </button>
 
     <p>Checkout session ID: <pre>@(Model.CheckoutSessionId)</pre></p>
 
@@ -42,4 +53,41 @@
         }
 
     })();
+</script>
+
+<script>
+(function () {
+    var stripe = Stripe('@(Model.PublicKey)');
+
+    var checkoutButton = document.getElementById('checkout-button-@(Model.PriceId)');
+    checkoutButton.addEventListener('click', function () {
+        /*
+            * When the customer clicks on the button, redirect
+            * them to Checkout.
+            */
+        stripe.redirectToCheckout({
+            lineItems: [{ price: '@(Model.PriceId)', quantity: 1 }],
+            mode: 'payment',
+            /*
+                * Do not rely on the redirect to the successUrl for fulfilling
+                * purchases, customers may not always reach the success_url after
+                * a successful payment.
+                * Instead use one of the strategies described in
+                * https://stripe.com/docs/payments/checkout/fulfill-orders
+                */
+            successUrl: '@($"https://localhost:5001/success/?stirpePriceId={ Model.PriceId }")',
+            cancelUrl: '@($"https://localhost:5001/?stirpePriceId={ Model.PriceId }")',
+        })
+            .then(function (result) {
+                if (result.error) {
+                    /*
+                        * If `redirectToCheckout` fails due to a browser or network
+                        * error, display the localized error message to your customer.
+                        */
+                    var displayError = document.getElementById('error-message');
+                    displayError.textContent = result.error.message;
+                }
+            });
+    });
+})();
 </script>
